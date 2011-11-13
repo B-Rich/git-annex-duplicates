@@ -37,7 +37,6 @@ def generate_mapping(directory):
             duplicate_count += 1
         except KeyError:
             reverse_dict[key] = [link]
-        finally:
             key_list.append(key)
     return duplicate_count, reverse_dict, key_list
 
