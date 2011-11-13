@@ -45,7 +45,7 @@ def print_duplicates(duplicate_count, reverse_dict, key_list):
     for key in key_list:
         value = reverse_dict[key]
         if len(value) > 1:
-            print "The following key has multiple links: "
+            print "The following key has %d links: " % len(value)
             print key
             for v in value:
                 print "--> " + v
