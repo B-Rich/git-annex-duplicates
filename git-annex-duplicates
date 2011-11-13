@@ -1,0 +1,71 @@
+#!/usr/bin/env python
+
+# Prototype implementation of 'git annex duplicates'
+# Will find symlinks that point to the same key.
+# Author: Valentin Haenel <valentin.haenel@gmx.de>
+# License: WTFPL http://sam.zoy.org/wtfpl/
+
+import os
+import subprocess
+import optparse
+
+VERBOSE=True
+
+def run_command(command_list):
+    process = subprocess.Popen(command_list,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+    output = process.stdout.read()
+    process.wait()
+    if process.returncode:
+        err = process.stderr.read()
+        err = '\n'.join(('> ' + e) for e in err.split('\n'))
+        raise Exception('Stderr:\n%s\nReturn code %d from command "%s"' \
+            % (err, process.returncode, ' '.join(command_list)))
+    return output
+
+def generate_mapping(directory):
+    duplicate_count, reverse_dict, key_list = 0, {}, []
+    symlinks = run_command(["find", directory, "-type", "l"]).split('\n')[:-1]
+    if VERBOSE:
+        print "Found %d symlinks." % len(symlinks)
+    for link in symlinks:
+        target = run_command(["ls", "-la", link])
+        key = target[target.find("SHA1"):target.rfind("SHA1")-1]
+        try:
+            reverse_dict[key] += [link]
+            duplicate_count += 1
+        except KeyError:
+            reverse_dict[key] = [link]
+        finally:
+            key_list.append(key)
+    return duplicate_count, reverse_dict, key_list
+
+def print_duplicates(duplicate_count, reverse_dict, key_list):
+    for key in key_list:
+        value = reverse_dict[key]
+        if len(value) > 1:
+            print "The following key has multiple links: "
+            print key
+            for v in value:
+                print "--> " + v
+            print "---"
+    print "Number of duplicates: " + str(duplicate_count)
+
+if __name__ == "__main__":
+    parser = optparse.OptionParser(usage="%prog [options] <path>")
+    parser.add_option("-v", "--verbose",
+            action="store_true",
+            help="enable verbose mode",
+            default= False,
+            dest="verbose")
+    (options, args) = parser.parse_args()
+    VERBOSE = options.verbose
+    if VERBOSE:
+        print "Verbose mode enabled"
+    directory = "."
+    if len(args) == 1:
+        directory = args[0]
+    if VERBOSE:
+        print "Searching for duplicates in '%s'." % directory
+    print_duplicates(*generate_mapping(directory))
