@@ -41,15 +41,18 @@ def generate_mapping(directory):
     return duplicate_count, reverse_dict, key_list
 
 def print_duplicates(duplicate_count, reverse_dict, key_list):
+    keys_with_duplicates = 0
     for key in key_list:
         value = reverse_dict[key]
         if len(value) > 1:
+            keys_with_duplicates +=1
             print "The following key has %d links: " % len(value)
             print key
             for v in value:
                 print "--> " + v
             print "---"
-    print "Number of duplicates: " + str(duplicate_count)
+    print "Number of keys with duplicates: " + str(keys_with_duplicates)
+    print "Total number of duplicates: " + str(duplicate_count)
 
 if __name__ == "__main__":
     parser = optparse.OptionParser(usage="%prog [options] <path>")
